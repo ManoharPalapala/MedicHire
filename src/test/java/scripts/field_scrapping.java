@@ -25,7 +25,7 @@ public class field_scrapping {
 
     public static void main(String[] args){
         field_scrapping m = new field_scrapping();
-        m.getEmployment();
+        m.extractData("url");
 
     }
 
@@ -43,8 +43,8 @@ public class field_scrapping {
 
 
 
-    public void getEmployment(){
-        List<String> jobType = new ArrayList<>();
+    public void extractData(String attribute){
+        List<String> data_to_print = new ArrayList<>();
         ChromeOptions options = new ChromeOptions();
         options.addArguments("--headless=new");
         WebDriver driver;
@@ -52,31 +52,44 @@ public class field_scrapping {
 
         for(String url:data()){
             driver = new ChromeDriver(options);
-            try{
-                driver.get(url);
-                WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
-                WebElement employmentType = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='css-19idom']/child::div[@data-automation-id='time']/dl/child::dd")));
-                System.out.println(count+": "+employmentType.getText());
-                jobType.add(employmentType.getText());
-
-            }catch (Exception e){
+            if(attribute.equals("employmentType")){
                 try{
-                    if(driver.findElement(By.xpath("//span[@data-automation-id='errorMessage']")).isDisplayed()){
-                        jobType.add("Expired");
-                        System.out.println(count+": "+"Expired");
-                    }
-                }catch (Exception error){
-                    jobType.add("Full time");
-                    System.out.println(count+": "+"Full time");
-                }
+                    driver.get(url);
+                    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                    WebElement employmentType = wait.until(ExpectedConditions.visibilityOfElementLocated(By.xpath("//div[@class='css-19idom']/child::div[@data-automation-id='time']/dl/child::dd")));
+                    System.out.println(count+": "+employmentType.getText());
+                    data_to_print.add(employmentType.getText());
 
-            }finally {
-                driver.quit();
+                }catch (Exception e){
+                    try{
+                        if(driver.findElement(By.xpath("//span[@data-automation-id='errorMessage']")).isDisplayed()){
+                            System.out.println(count+": "+"Expired");
+                            data_to_print.add("Expired");
+                        }
+                    }catch (Exception error){
+                        System.out.println(count+": "+"Full time");
+                        data_to_print.add("Full time");
+                    }
+                    finally {
+                        driver.quit();
+                    }
+                    count++;
+                }
+            } else if (attribute.equals("url")) {
+                try{
+                    driver.get(url);
+                    WebDriverWait wait = new WebDriverWait(driver, Duration.ofSeconds(10));
+                    System.out.println(count+": "+driver.getCurrentUrl());
+                    data_to_print.add(driver.getCurrentUrl());
+                }catch (Exception error){
+                    System.out.println(count+": "+"Took more time to load");
+                    data_to_print.add("Took more time to load");
+                }
             }
-            count++;
+
         }
         try {
-            excel.writeData_NewExcel(jobType);
+            excel.writeData_NewExcel(data_to_print);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
